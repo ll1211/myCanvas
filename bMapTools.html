@@ -159,21 +159,21 @@
         //添加鼠标绘制工具监听事件，用于获取绘制结果
         drawingManager.addEventListener('overlaycomplete', overlaycomplete);
 
-        var curePoints = [];
+        var cureMarkers = [];
         $('#curveLine').bind('click',function(){
             $('#curveLine').hide();
             $('#curveLineOff').show();
             if(overlay1) {
                 map.removeOverlay(overlay1);
             }
-            map.addEventListener("click", addPoint);
+            map.setDefaultCursor('crosshair');
+            map.addEventListener('click', addPoint);
         });
 
         $('#curveLineOff').bind('click',function(){
             $('#curveLineOff').hide();
             $('#curveLine').show();
             if(curve) {
-                map.removeEventListener("click", addPoint);
                 var content = '';
                 var points = curve.getPath();
                 var pointArr = [];
@@ -186,19 +186,29 @@
                 content = '<br/><span>弧线Path:</span> ' + pointArr.join(';');
                 content += '<br/><span>弧线屏幕坐标Path:</span> ' + pixelArr.join(';');
                 $('#result').html(content);
+                map.setDefaultCursor('grab');
                 map.clearOverlays();
-                curePoints = [];
+                cureMarkers = [];
             }
         });
 
 
         var curve;
         var addPoint = function(e) {
-            curePoints.push(e.point);
-            if(curePoints.length == 3) {
+            var marker = new BMap.Marker(e.point);// 创建标注
+            cureMarkers.push(marker);
+            map.addOverlay(marker);
+            marker.enableDragging();
+            if(cureMarkers.length == 4) {
+                var curePoints = [];
+                for(var i in cureMarkers) {
+                    curePoints.push(cureMarkers[i].getPosition());
+                    map.removeOverlay(cureMarkers[i]);
+                }
                 curve = new BMapLib.CurveLine(curePoints, {strokeColor:"blue", strokeWeight:3, strokeOpacity:0.5}); //创建弧线对象
                 map.addOverlay(curve); //添加到地图中
                 curve.enableEditing(); //开启编辑功能
+                map.removeEventListener("click", addPoint);
             }
         };
     </script>
