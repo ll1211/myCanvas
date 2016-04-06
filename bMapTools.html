@@ -9,6 +9,7 @@
     <!--加载鼠标绘制工具-->
     <script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
     <script type="text/javascript" src="js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="js/CurveLine.min.js"></script>
     <link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
     <style type="text/css">
         html,body{
@@ -31,7 +32,9 @@
 </head>
 <body>
     <div id="map"></div>
-    <div id="result" style="position:absolute;top:40px;left:10px;max-width:96%;word-break: break-all;word-wrap: break-word;background:rgba(255,255,255,0.8);padding:5px; box-shadow: 2px 2px 5px #333333;">
+    <div id="curveLine" style="cursor:pointer;position:absolute;top:5px;right:20px;background:rgba(255,255,255,0.8);padding:5px; box-shadow: 2px 2px 5px #333333;font-weight: bold;font-size: 14px;color: #0066ff">弧线</div>
+    <div id="curveLineOff" style="display:none;cursor:pointer;position:absolute;top:5px;right:20px;background:rgba(255,255,255,0.8);padding:5px; box-shadow: 2px 2px 5px #333333;font-weight: bold;font-size: 14px;color: #0066ff">获取</div>
+    <div id="result" style="position:absolute;top:40px;left:10px;max-width:96%;word-break: break-all;word-wrap: break-word;background:rgba(255,255,255,0.8);padding:5px; box-shadow: 2px 2px 5px #333333;"></div>
 
     <script type="text/javascript">
         var map = new BMap.Map('map');
@@ -63,18 +66,17 @@
             rectangleOptions: styleOptions //矩形的样式
         });
 
-        var overlay;
+        var overlay1;
         var overlaycomplete = function(e){
-            console.log(overlay);
-            if(overlay) {
-                map.removeOverlay(overlay);
+            if(overlay1) {
+                map.removeOverlay(overlay1);
             }
-            overlay = e.overlay;
+            overlay1 = e.overlay;
             var content = '';
             var type = e.drawingMode;
             switch (type) {
                 case BMAP_DRAWING_MARKER : {
-                    var point = overlay.getPosition();
+                    var point = overlay1.getPosition();
                     content = '<span>经纬度:</span> ' + [point.lng, point.lat].join();
                     var pixel = map.pointToPixel(point);
                     content += '<br/><span>屏幕坐标:</span> ' + [pixel.x, pixel.y].join();
@@ -82,13 +84,13 @@
                 }
                 case BMAP_DRAWING_CIRCLE : {
                     //圆形的中心点坐标
-                    var center = overlay.getCenter();
+                    var center = overlay1.getCenter();
                     //圆形的半径，单位为米
-                    var radius = overlay.getRadius();
+                    var radius = overlay1.getRadius();
                     content = '<span>圆心经纬度:</span> ' + [center.lng, center.lat].join();
                     var pixel = map.pointToPixel(center);
                     content += '<br/><span>圆半径:</span> ' + radius + '米';
-                    var points = overlay.getPath();
+                    var points = overlay1.getPath();
                     var pointArr = [];
                     var pixelArr = [];
                     for(var i in points) {
@@ -102,7 +104,7 @@
                     break;
                 }
                 case BMAP_DRAWING_POLYLINE : {
-                    var points = overlay.getPath();
+                    var points = overlay1.getPath();
                     var pointArr = [];
                     var pixelArr = [];
                     for(var i in points) {
@@ -115,7 +117,7 @@
                     break;
                 }
                 case BMAP_DRAWING_POLYGON : {
-                    var points = overlay.getPath();
+                    var points = overlay1.getPath();
                     var pointArr = [];
                     var pixelArr = [];
                     for(var i in points) {
@@ -128,7 +130,7 @@
                     break;
                 }
                 case BMAP_DRAWING_RECTANGLE : {
-                    var points = overlay.getPath();
+                    var points = overlay1.getPath();
                     var pointArr = [];
                     var pixelArr = [];
                     for(var i in points) {
@@ -136,7 +138,7 @@
                         var pixel = map.pointToPixel(points[i]);
                         pixelArr.push([pixel.x, pixel.y].join());
                     }
-                    var bounds = overlay.getBounds();
+                    var bounds = overlay1.getBounds();
                     var swPoint = bounds.getSouthWest();
                     var nePoint = bounds.getNorthEast();
                     content = '<span>左下角经纬度:</span> ' + [swPoint.lng, swPoint.lat].join();
@@ -156,6 +158,49 @@
         };
         //添加鼠标绘制工具监听事件，用于获取绘制结果
         drawingManager.addEventListener('overlaycomplete', overlaycomplete);
+
+        var curePoints = [];
+        $('#curveLine').bind('click',function(){
+            $('#curveLine').hide();
+            $('#curveLineOff').show();
+            if(overlay1) {
+                map.removeOverlay(overlay1);
+            }
+            map.addEventListener("click", addPoint);
+        });
+
+        $('#curveLineOff').bind('click',function(){
+            $('#curveLineOff').hide();
+            $('#curveLine').show();
+            if(curve) {
+                map.removeEventListener("click", addPoint);
+                var content = '';
+                var points = curve.getPath();
+                var pointArr = [];
+                var pixelArr = [];
+                for (var i in points) {
+                    pointArr.push([points[i].lng, points[i].lat].join());
+                    var pixel = map.pointToPixel(points[i]);
+                    pixelArr.push([pixel.x, pixel.y].join());
+                }
+                content = '<br/><span>弧线Path:</span> ' + pointArr.join(';');
+                content += '<br/><span>弧线屏幕坐标Path:</span> ' + pixelArr.join(';');
+                $('#result').html(content);
+                map.clearOverlays();
+                curePoints = [];
+            }
+        });
+
+
+        var curve;
+        var addPoint = function(e) {
+            curePoints.push(e.point);
+            if(curePoints.length == 3) {
+                curve = new BMapLib.CurveLine(curePoints, {strokeColor:"blue", strokeWeight:3, strokeOpacity:0.5}); //创建弧线对象
+                map.addOverlay(curve); //添加到地图中
+                curve.enableEditing(); //开启编辑功能
+            }
+        };
     </script>
 </body>
 </html>
