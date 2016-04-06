@@ -2,9 +2,43 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="author" content="熟悉的陌生人, NewLight" />
     <title></title>
+    <script type="text/javascript" src="js/jquery-1.11.0.min.js"></script>
+    <style type="text/css">
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+        *{margin:0;padding:0;}
+    </style>
 </head>
 <body>
+    <canvas id="myCanvas" style="height: 100%;">
+        浏览器不支持canvas
+    </canvas>
 
+    <script type="text/javascript">
+        $(function(){
+            var canvas = document.getElementById('myCanvas');
+            canvas.height = $(document).height();
+            canvas.width = $(document).width();
+
+            var context = canvas.getContext('2d');
+
+
+            context.beginPath();
+            for (var i in points) {
+                var pixel = map.pointToPixel(points[i]);
+                if (i == 0) {
+                    context.moveTo(pixel.x, pixel.y);   //定义绘画开始的位置
+                } else {
+                    context.lineTo(pixel.x, pixel.y);  //画一条直线，结束点坐标是x=150,y=50
+                }
+            }
+            context.closePath();
+        });
+    </script>
 </body>
 </html>

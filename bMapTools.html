@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="获取百度地图绘制图形的坐标" />
+    <meta name="author" content="熟悉的陌生人, NewLight" />
+    <title></title>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=7kbxYZeqswVDpYGqPMWrhMve"></script>
+    <!--加载鼠标绘制工具-->
+    <script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
+    <script type="text/javascript" src="js/jquery-1.11.0.min.js"></script>
+    <link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
+    <style type="text/css">
+        html,body{
+            width:100%;
+            height:100%;
+            margin:0;
+            padding:0;
+        }
+        #map{
+            width:100%;
+            height:100%;
+        }
+        #result {
+            font-size: 12px;
+        }
+        #result span {
+            color: #0088ff;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="result" style="position:absolute;top:40px;left:10px;max-width:96%;word-break: break-all;word-wrap: break-word;background:rgba(255,255,255,0.8);padding:5px; box-shadow: 2px 2px 5px #333333;">
+
+    <script type="text/javascript">
+        var map = new BMap.Map('map');
+        var poi = new BMap.Point(118.782913,32.0485);
+        map.centerAndZoom(poi, 16);
+        map.enableScrollWheelZoom();
+
+        var styleOptions = {
+            strokeColor:"red",    //边线颜色。
+            //fillColor:"red",      //填充颜色。当参数为空时，圆形将没有填充效果。
+            strokeWeight: 3,       //边线的宽度，以像素为单位。
+            strokeOpacity: 0.8,	   //边线透明度，取值范围0 - 1。
+            //fillOpacity: 0.6,      //填充的透明度，取值范围0 - 1。
+            strokeStyle: 'solid' //边线的样式，solid或dashed。
+
+        }
+        //实例化鼠标绘制工具
+        var drawingManager = new BMapLib.DrawingManager(map, {
+            isOpen: false, //是否开启绘制模式
+            enableDrawingTool: true, //是否显示工具栏
+            drawingToolOptions: {
+                anchor: BMAP_ANCHOR_TOP_RIGHT, //位置
+                offset: new BMap.Size(5, 5), //偏离值
+                scale : 0.6
+            },
+            circleOptions: styleOptions, //圆的样式
+            polylineOptions: styleOptions, //线的样式
+            polygonOptions: styleOptions, //多边形的样式
+            rectangleOptions: styleOptions //矩形的样式
+        });
+
+        var overlay;
+        var overlaycomplete = function(e){
+            console.log(overlay);
+            if(overlay) {
+                map.removeOverlay(overlay);
+            }
+            overlay = e.overlay;
+            var content = '';
+            var type = e.drawingMode;
+            switch (type) {
+                case BMAP_DRAWING_MARKER : {
+                    var point = overlay.getPosition();
+                    content = '<span>经纬度:</span> ' + [point.lng, point.lat].join();
+                    var pixel = map.pointToPixel(point);
+                    content += '<br/><span>屏幕坐标:</span> ' + [pixel.x, pixel.y].join();
+                    break;
+                }
+                case BMAP_DRAWING_CIRCLE : {
+                    //圆形的中心点坐标
+                    var center = overlay.getCenter();
+                    //圆形的半径，单位为米
+                    var radius = overlay.getRadius();
+                    content = '<span>圆心经纬度:</span> ' + [center.lng, center.lat].join();
+                    var pixel = map.pointToPixel(center);
+                    content += '<br/><span>圆半径:</span> ' + radius + '米';
+                    var points = overlay.getPath();
+                    var pointArr = [];
+                    var pixelArr = [];
+                    for(var i in points) {
+                        pointArr.push([points[i].lng, points[i].lat].join());
+                        var pixel = map.pointToPixel(points[i]);
+                        pixelArr.push([pixel.x, pixel.y].join());
+                    }
+                    content += '<br/><span>经纬度Path:</span> ' + pointArr.join(';');
+                    content += '<br/><span>圆心屏幕坐标:</span> ' + [pixel.x, pixel.y].join();
+                    content += '<br/><span>屏幕坐标Path:</span> ' + pixelArr.join(';');
+                    break;
+                }
+                case BMAP_DRAWING_POLYLINE : {
+                    var points = overlay.getPath();
+                    var pointArr = [];
+                    var pixelArr = [];
+                    for(var i in points) {
+                        pointArr.push([points[i].lng, points[i].lat].join());
+                        var pixel = map.pointToPixel(points[i]);
+                        pixelArr.push([pixel.x, pixel.y].join());
+                    }
+                    content = '<br/><span>折线Path:</span> ' + pointArr.join(';');
+                    content += '<br/><span>屏幕坐标Path:</span> ' + pixelArr.join(';');
+                    break;
+                }
+                case BMAP_DRAWING_POLYGON : {
+                    var points = overlay.getPath();
+                    var pointArr = [];
+                    var pixelArr = [];
+                    for(var i in points) {
+                        pointArr.push([points[i].lng, points[i].lat].join());
+                        var pixel = map.pointToPixel(points[i]);
+                        pixelArr.push([pixel.x, pixel.y].join());
+                    }
+                    content = '<br/><span>多边形Path:</span> ' + pointArr.join(';');
+                    content += '<br/><span>屏幕坐标Path:</span> ' + pixelArr.join(';');
+                    break;
+                }
+                case BMAP_DRAWING_RECTANGLE : {
+                    var points = overlay.getPath();
+                    var pointArr = [];
+                    var pixelArr = [];
+                    for(var i in points) {
+                        pointArr.push([points[i].lng, points[i].lat].join());
+                        var pixel = map.pointToPixel(points[i]);
+                        pixelArr.push([pixel.x, pixel.y].join());
+                    }
+                    var bounds = overlay.getBounds();
+                    var swPoint = bounds.getSouthWest();
+                    var nePoint = bounds.getNorthEast();
+                    content = '<span>左下角经纬度:</span> ' + [swPoint.lng, swPoint.lat].join();
+                    content += '<br/><span>右上角经纬度:</span> ' + [nePoint.lng, nePoint.lat].join();
+                    content += '<br/><span>矩形Path:</span> ' + pointArr.join(';');
+                    var pixel = map.pointToPixel(swPoint);
+                    content += '<br/><span>左下角屏幕坐标:</span> ' + [pixel.x, pixel.y].join();
+                    pixel = map.pointToPixel(nePoint);
+                    content += '<br/><span>右上角屏幕坐标:</span> ' + [pixel.x, pixel.y].join();
+                    content += '<br/><span>屏幕坐标Path:</span> ' + pixelArr.join(';');
+                    break;
+                }
+                default :
+            }
+            $('#result').html(content);
+            drawingManager.close();
+        };
+        //添加鼠标绘制工具监听事件，用于获取绘制结果
+        drawingManager.addEventListener('overlaycomplete', overlaycomplete);
+    </script>
+</body>
+</html>
