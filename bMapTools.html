@@ -159,18 +159,26 @@
         //添加鼠标绘制工具监听事件，用于获取绘制结果
         drawingManager.addEventListener('overlaycomplete', overlaycomplete);
 
-        var cureMarkers = [];
+        var curveMarkers = [];
         $('#curveLine').bind('click',function(){
             $('#curveLine').hide();
             $('#curveLineOff').show();
             if(overlay1) {
                 map.removeOverlay(overlay1);
             }
+            $('#result').html('');
+            //更换鼠标样式
             map.setDefaultCursor('crosshair');
             map.addEventListener('click', addPoint);
+            map.addEventListener('rightclick', curveEnd);
+            map.clearOverlays();
+            curveMarkers = [];
         });
 
         $('#curveLineOff').bind('click',function(){
+            map.removeEventListener("click", addPoint);
+            map.removeEventListener("rightclick", curveEnd);
+            curveMarkers = [];
             $('#curveLineOff').hide();
             $('#curveLine').show();
             if(curve) {
@@ -188,7 +196,6 @@
                 $('#result').html(content);
                 map.setDefaultCursor('grab');
                 map.clearOverlays();
-                cureMarkers = [];
             }
         });
 
@@ -196,21 +203,24 @@
         var curve;
         var addPoint = function(e) {
             var marker = new BMap.Marker(e.point);// 创建标注
-            cureMarkers.push(marker);
+            curveMarkers.push(marker);
             map.addOverlay(marker);
             marker.enableDragging();
-            if(cureMarkers.length == 4) {
-                var curePoints = [];
-                for(var i in cureMarkers) {
-                    curePoints.push(cureMarkers[i].getPosition());
-                    map.removeOverlay(cureMarkers[i]);
-                }
-                curve = new BMapLib.CurveLine(curePoints, {strokeColor:"blue", strokeWeight:3, strokeOpacity:0.5}); //创建弧线对象
-                map.addOverlay(curve); //添加到地图中
-                curve.enableEditing(); //开启编辑功能
-                map.removeEventListener("click", addPoint);
-            }
         };
+
+        var curveEnd = function() {
+            var curePoints = [];
+            for(var i in curveMarkers) {
+                curePoints.push(curveMarkers[i].getPosition());
+                map.removeOverlay(curveMarkers[i]);
+            }
+            curve = new BMapLib.CurveLine(curePoints, {strokeColor:"blue", strokeWeight:3, strokeOpacity:0.5}); //创建弧线对象
+            map.addOverlay(curve); //添加到地图中
+            curve.enableEditing(); //开启编辑功能
+            map.removeEventListener("click", addPoint);
+            map.removeEventListener("rightclick", curveEnd);
+            curveMarkers = [];
+        }
     </script>
 </body>
 </html>
