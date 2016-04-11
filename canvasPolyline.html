@@ -15,30 +15,118 @@
     </style>
 </head>
 <body>
-    <canvas id="myCanvas" style="height: 100%;">
+    <canvas id="myCanvas">
         浏览器不支持canvas
     </canvas>
+    <canvas id="ball"></canvas>
 
     <script type="text/javascript">
+        var width, height;
+        var pos = [[797,144],[534,264],[612,408],[859,476],[379,497],[474,215]];
+        var speed = 10;
+
         $(function(){
             var canvas = document.getElementById('myCanvas');
-            canvas.height = $(document).height();
-            canvas.width = $(document).width();
+            var c2 = document.getElementById('ball');
+            height = canvas.height = c2.height = innerHeight;
+            width = canvas.width = c2.width = innerWidth;
+            canvas.style.position = c2.style.position = 'fixed';
+            canvas.style.top = c2.style.top = 0;
+            canvas.style.left = c2.style.left = 0;
 
             var context = canvas.getContext('2d');
-
+            var ctx2 = c2.getContext('2d');
 
             context.beginPath();
-            for (var i in points) {
-                var pixel = map.pointToPixel(points[i]);
+            for (var i in pos) {
                 if (i == 0) {
-                    context.moveTo(pixel.x, pixel.y);   //定义绘画开始的位置
+                    context.moveTo(pos[i][0],pos[i][1]);   //定义绘画开始的位置
                 } else {
-                    context.lineTo(pixel.x, pixel.y);  //画一条直线，结束点坐标是x=150,y=50
+                    context.lineTo(pos[i][0],pos[i][1]);  //画一条直线，结束点坐标是x=150,y=50
                 }
             }
-            context.closePath();
+            context.strokeStyle = "rgb(0,0,222)";
+            context.stroke();
+
+            var running = false;
+            var time = 0;
+            var creeper;
+//        var points = '797,144;534,264;612,408;859,476;379,497;474,215';
+//        var arr = points.split(';');
+            var FPC;
+
+            function Creeper(n) {
+                if(n == pos.length-1) return false;
+                this.x = pos[n][0];
+                this.y = pos[n][1];
+                this.x1 = pos[n+1][0];
+                this.y1 = pos[n+1][1];
+                this.depth = (n || 0);
+            }
+
+            Creeper.prototype.spawn = function() {
+                return new Creeper(this.depth + 1);
+            };
+
+            function draw() {
+                if (Math.floor(FPC) == time) {
+                    time = 0;
+                    creeper = creeper.spawn();
+                    console.log(creeper);
+                    if(!creeper) {
+                        running = false;
+                        return;
+                    }
+                }
+                ctx2.clearRect(0, 0, width, height);
+                var target = segment(creeper.x,creeper.y,creeper.x1, creeper.y1, time);
+
+                var g = ctx2.createRadialGradient(target.x,target.y, 0, target.x,target.y, 4);
+                g.addColorStop(0, 'white');
+                g.addColorStop(1, 'rgba(0, 0, 255, 0)');
+                ctx2.beginPath();
+                ctx2.arc(target.x,target.y, 4, 0, Math.PI * 2);
+                ctx2.fillStyle = g;
+                ctx2.fill();
+            }
+
+            function segment(x1, y1, x2, y2, n) {
+                //var rate = x2 - x1 > 0? 1: -1;
+                //var k = (y2 - y1) / (x2 - x1);
+                FPC = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) / speed;
+                var dx = (x2 - x1) / FPC;
+                var dy = (y2 - y1) / FPC;
+                var xx = x1 + n * dx;
+                var yy = y1 + n * dy;
+                return {
+                    x: xx,
+                    y: yy
+                };
+            }
+
+            function loop() {
+                draw();
+                time++;
+                if (running) requestAnimationFrame(loop);
+            }
+
+            creeper = new Creeper(0);
+            running = true;
+            loop();
+
         });
+
+        window.requestAnimFrame = (function(){
+            return window.requestAnimationFrame ||
+                    window.webkitRequestAnimationFrame ||
+                    window.mozRequestAnimationFrame ||
+                    window.oRequestAnimationFrame ||
+                    window.msRequestAnimationFrame ||
+                    function( callback ){
+                        window.setTimeout(callback, 1000 / 60);//定义每秒执行60次动画
+                    };
+        })();
+
     </script>
 </body>
 </html>
