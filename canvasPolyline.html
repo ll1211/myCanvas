@@ -23,7 +23,7 @@
     <script type="text/javascript">
         var width, height;
         var pos = [[797,144],[534,264],[612,408],[859,476],[379,497],[474,215]];
-        var speed = 10;
+        var speed = 1.5;
 
         $(function(){
             var canvas = document.getElementById('myCanvas');
@@ -56,7 +56,7 @@
             var FPC;
 
             function Creeper(n) {
-                if(n == pos.length-1) return false;
+                if(n == pos.length-1) n=0;
                 this.x = pos[n][0];
                 this.y = pos[n][1];
                 this.x1 = pos[n+1][0];
@@ -72,22 +72,20 @@
                 if (Math.floor(FPC) == time) {
                     time = 0;
                     creeper = creeper.spawn();
-                    console.log(creeper);
-                    if(!creeper) {
-                        running = false;
-                        return;
-                    }
+                    console.log(creeper.depth);
                 }
-                ctx2.clearRect(0, 0, width, height);
-                var target = segment(creeper.x,creeper.y,creeper.x1, creeper.y1, time);
+                if(running) {
+                    ctx2.clearRect(0, 0, width, height);
+                    var target = segment(creeper.x,creeper.y,creeper.x1, creeper.y1, time);
 
-                var g = ctx2.createRadialGradient(target.x,target.y, 0, target.x,target.y, 4);
-                g.addColorStop(0, 'white');
-                g.addColorStop(1, 'rgba(0, 0, 255, 0)');
-                ctx2.beginPath();
-                ctx2.arc(target.x,target.y, 4, 0, Math.PI * 2);
-                ctx2.fillStyle = g;
-                ctx2.fill();
+                    var g = ctx2.createRadialGradient(target.x,target.y, 0, target.x,target.y, 4);
+                    g.addColorStop(0, 'white');
+                    g.addColorStop(1, 'rgba(0, 0, 255, 0)');
+                    ctx2.beginPath();
+                    ctx2.arc(target.x,target.y, 4, 0, Math.PI * 2);
+                    ctx2.fillStyle = g;
+                    ctx2.fill();
+                }
             }
 
             function segment(x1, y1, x2, y2, n) {
